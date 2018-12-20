@@ -29,8 +29,6 @@ ttsClient = texttospeech.TextToSpeechClient()
 # Audio recording parameters
 RATE = 16000
 CHUNK = int(RATE / 10)  # 100ms
-global isListening
-isListening = False
 
 def to_speech(text):
     # os.remove("output.mp3")
@@ -145,6 +143,8 @@ def listen_print_loop(responses):
     the next result to overwrite it, until the response is a final one. For the
     final one, print a newline to preserve the finalized transcription.
     """
+    global isListening
+    isListening = False
     num_chars_printed = 0
     for response in responses:
         if not response.results:
@@ -177,31 +177,35 @@ def listen_print_loop(responses):
             transcript = transcript.strip()
             print("Heard: " + transcript + overwrite_chars)
 
+            intents = ["affect light", "retrieve news", "wake up"]
 
-            maxKeyphrases = ["hey max", "yomax", "yo max", "yo max you there", "max", "alright max", "okay max","max you there"]
-            if transcript.lower() in maxKeyphrases:
+            dialogFlowResponse = detect_intent_texts('projectmaxwell', 1, transcript)
+            intent = dialogFlowResponse.intent.display_name.lower()
+            to_speech(dialogFlowResponse.fulfillment_text)
+
+            if intent == 'wake up':
                 isListening = True
-                greetings = ["Hello sir!", "At your service", "Yes sir?"]
-                greetingVal = random.randrange(len(greetings))
-                greetingType = random.randrange(2)
-                currTime = datetime.datetime.now().hour
-                if greetingType == 0:
-                    if 3 < currTime < 12:
-                        to_speech("Good morning.")
-                    elif 12 <= currTime < 18:
-                        to_speech("Good afternoon.")
-                    else:
-                        to_speech("Good evening.")
-                elif greetingType == 1:
-                    to_speech(greetings[greetingVal])
 
-            intents = ["affect light", "retrieve news", "greeting"]
+            # maxKeyphrases = ["hey max", "yomax", "yo max", "yo max you there", "max", "alright max", "okay max","max you there"]
+            # if transcript.lower() in maxKeyphrases:
+            #     isListening = True
+            #     greetings = ["Hello sir!", "At your service", "Yes sir?"]
+            #     greetingVal = random.randrange(len(greetings))
+            #     greetingType = random.randrange(2)
+            #     currTime = datetime.datetime.now().hour
+            #     if greetingType == 0:
+            #         if 3 < currTime < 12:
+            #             to_speech("Good morning.")
+            #         elif 12 <= currTime < 18:
+            #             to_speech("Good afternoon.")
+            #         else:
+            #             to_speech("Good evening.")
+            #     elif greetingType == 1:
+            #         to_speech(greetings[greetingVal])
+
             if isListening:
-                dialogFlowResponse = detect_intent_texts('projectmaxwell',1, transcript)
-                intent = dialogFlowResponse.intent.display_name
-                if intent.lower() == 'retrieve news':
-                    webbrowser.open("")
-                    to_speech(dialogFlowResponse.fulfillment_text)
+                if intent == 'retrieve news':
+                    webbrowser.open("https://news.google.com/?hl=en-US&gl=US&ceid=US:en")
 
             num_chars_printed = 0
 
